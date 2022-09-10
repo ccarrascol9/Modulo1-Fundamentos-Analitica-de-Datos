@@ -1,0 +1,249 @@
+---
+title: "Laboratorio 2"
+subtitle: 'Fundamentos de la Analítica de Datos'
+author: "Camila Carrasco Latin"
+date: "21 de abril 2022"
+output: 
+  html_document: 
+    theme: paper
+    toc: yes
+---
+
+# Intrucciones
+
+1. Este laboratorio es individual.
+
+2. Debe entregar un archivo **HTML** y **rmd** a través de Canvas. 
+
+3. Muestre claramente el código utilizado en un chunk con la respuesta.
+
+4. La fecha de entrega es para el 21 de abril a las 10:00 am.
+
+
+# Laboratorio 
+
+En este laboratorio usarán un dataset con datos de estudiantes provenientes 1100 escuelas aproximadamente de EE.UU. La información recolectada tiene como objetivo encontrar si la distancia del establecimiento educacional al hogar influye de manera significativa en el logro educacional.Para ello, debe instalar la librería **readxl** y cargar los datos.
+
+Las columnas con las cuales dispone son las siguientes:
+
+
+1. **genero:**	toma el valor 1 si es mujer y 0 si es hombre.
+
+2. **raza:**	toma el valor 1 si es Afromericano y 0 otra.
+
+3. **hispano:**	toma el valor 1 si es hispano y 0 si no.
+
+4. **prueba_conocimiento:**	resultados prueba de estudiantes de último año de secundaria (Similar a lo que es la PSU                              en Chile).
+5. **educPadre:**	1 si el padre está graduado de la Universidad y 0 si no.
+
+6. **educMadre:**	1 si la madre está graduada de la Universidad y 0 si no. 
+
+7. **casaPropia:** 1 si la familia tiene casa propia y 0 si no.
+
+8. **urbano:** 1 si el colegio está en un área urbana y 0 si no.
+
+9. **desempleo:**	tasa de desempleo para el periodo en estudio.
+
+10. **salario:**	salario por hora del sector manufacturero.
+
+11. **distancia:**	distancia a la Universidad en 10 millas, por ejemplo 0.2 es 2 millas.
+
+12. **arancel:**	promedio del arancel en 4 años, datos en miles de USD.
+
+13. **educacion:**	años de educación alcanzados.
+
+14. **ingresos:**	1 si el ingreso familiar es mayor a 20,000 por año y 0 si el ingreso es menor igual a 20,000 al año.
+
+
+*nota:* Para caragar los datos, deben cambiar la ruta, la cual debe estar asociada a su carpeta.
+
+
+## Librería necesaria
+
+```{r}
+
+#install.packages("readxl")
+
+library("readxl")
+library("ggpubr")
+library("ggplot2")
+library("corrplot")
+library("dplyr")
+
+```
+
+## Se cargan los datos
+
+```{r}
+db <- read_excel("C:/Users/56936/Downloads/Distancia.xls")
+```
+
+
+Responda las siguientes preguntas:
+
+1. Limpie y analice la base de datos, ¿requiere de alguna imputación? ¿Por qué si? o ¿Por qué no?. Apóyese en            gráficos.
+
+***Mostraremos la caracteristicas de la base de datos primero. A continuación Verificamos que nuestras variables son de caracter numerico***
+
+```{r}
+str(db)
+```
+***La siguiente funcion muestra las variables que utilizaremos y el tipo de clase de los datos. De igual manera summary indica que no existen na en la base de datos***
+```{r}
+summary(db$educacion)
+summary(db$distancia)
+```
+***Confirmamos nuevamente que no existan na, nan e infinite en nuestras variables a utilizar***
+```{r}
+db_na_educ<-db[is.na(db$educacion)==TRUE,]
+db_nan_educ<-db[is.nan(db$educacion)==TRUE,]
+db_infinite_educ<-db[is.infinite(db$educacion)==TRUE,]
+
+db_na_dist<-db[is.na(db$distancia)==TRUE,]
+db_nan_dist<-db[is.nan(db$distancia)==TRUE,]
+db_infinite_dist<-db[is.infinite(db$distancia)==TRUE,]
+```
+#RESPUESTA
+
+***De acuerdo a los graficos anteriores, verificamos que no existen na, por lo cual no es necesario la imputacion, por otro lado las variables son numericas, lo que no hace necesaria una transformacion de ellas. Estan listas para evaluar una correlación ***
+
+2. Plantee la hipótesis nula del objetivo de este estudio.
+```{r}
+
+```
+
+#RESPUESTA
+```{r}
+
+```
+
+***H0: No existe un grado de correlacion entre la distancia al  establecimiento y el logro educacional***
+
+3. Gráfique y cálcule algún indicador que permita apoyar el objetivo de este estudio.¿Qué se puede observar?
+
+**Nos apoyaremos de algunos graficos para determinar la correlación en nuestras variables de estudio**
+```{r}
+cor.test(db$educacion, db$distancia, method = "pearson", na.action = na.rm)
+```
+**Se detecta una correlacion muy baja y un p-value mayor a 0.05, por lo tanto graficaremos para tomar una mejor decision**
+
+***Graficamos la dispersión de los datos y el estadístico de pearson, para tener una mejor visualización de los datos.*** 
+```{r}
+sp <- ggscatter(db, x = "distancia" , y = "educacion",
+                add = "reg.line",  
+                add.params = list(color = "pink", fill = "lightgray"), 
+                conf.int = FALSE # Add confidence interval
+)
+sp+stat_cor(method = "pearson")
+```
+
+**Se detectan visualmente valores alejados y atipicos, se procede e eliminar outlier**
+```{r}
+q1<- quantile(db$distancia,0.25)
+q2<- quantile(db$distancia,0.5)
+q3 <- quantile(db$distancia,0.75)
+upper <- q3+1.5*(q3-q1)
+lower <- q1-1.5*(q3-q1)
+```
+**Asignamos un nuevo dataframe sin los outlier**
+```{r}
+db2 <- db[db$distancia<upper & db$distancia>lower,]
+```
+
+**Graficamos nuevamente y calculamos correlacion con la data db2 **
+
+```{r}
+cor.test(db2$educacion, db2$distancia, method = "pearson", na.action = na.rm)
+```
+
+
+```{r}
+
+sp <- ggscatter(db2, x = "distancia" , y = "educacion",
+                add = "reg.line",  
+                add.params = list(color = "pink", fill = "lightgray"), 
+                conf.int = FALSE # Add confidence interval
+)
+sp+stat_cor(method = "pearson")
+```
+#RESPUESTA
+**En el segundo grafico podemos observar que la correlacion mejoro y la grafica parece mas simetrica, en este caso el valor de p-value es 1.621e-09 valor menor a 0.05 por lo cual se rechaza la nula e indica que mi coeficiente es significativo **
+
+4. ¿Cuál sería la idea de recolectar entre los datos, la variable **prueba_conocimiento**?
+
+```{r}
+```
+#RESPUESTA
+```{r}
+```
+
+**Esta variable podria estar estrechamente relacionada con el logro educacional, ya que los resultados de la prueba de conocimiento 
+podrian ser un indicativo de el conocimiento o la mejor preparacion que poseen, por otro lado un buen puntaje podria permitirles avanzar a un nivel educativo superior.**
+
+5. Genere una regresión simple con la variable objetivo, explique claramente si es significativa e interprete su         resultado.¿Cómo es el R-squared?. Nombre a esta regresión commo **modelo 1**.
+
+**La distancia impacta la educación, por lo que la variable dependiente es educación**
+```{r}
+modelo1 <- lm(educacion ~ distancia, data = db2, na.action = na.omit)
+summary(modelo1)
+```
+
+#RESPUESTA
+
+**De acuerdo a la información presentada anteriormente podemos ver que el coeficiente tiene una incidencia en en logro educativo como se ve es negativo por lo que indica que si aumenta la distancia dismunuira en un 0,13348 el logro educacional, en cuanto al valor de p-value es menor a 0.05 por lo cual se rechaza la nula, dado esto significa que mi coeficiente es significativo.En cuando al Rcuadrado es extremandamente bajo 0.9% por lo cual no es un buen modelo representativo**
+  
+6. Genere una regresión multiple, con 3 variables, donde al menos una sea factor. Interprete sus coeficientes,           significancia y la robustez del modelo planteado. Nombre a esta regresión como **modelo 2**.
+
+```{r}
+modelo2<- lm(educacion ~ distancia+factor(educPadre), data = db2, na.action = na.omit)
+summary(modelo2)
+```
+#RESPUESTA 
+
+***La variable factor que se utilizo es educPadre,ya que mi base 0 es que el padre no esta graduado en la universidad,el coeficiente de esta variable esta indicando que si el padre asistio a la universidad aumentara en 1.27656 el logro educacional. Esto puede deberse al incentivo por parte de los padres  a que los hijos alcancen su mismo nivel educacional, de la mano de esto el hecho de que ellos hayan asistido sepan las formas y tengan los medios para dar estudios. El p value es menor que 0.05 por lo tanto se rechaza la nula, significa esto que mi cieficiente es significativo. Sin embargo la robustes del modelo es bajo ya que el R2 muestra que el modelo explica solo el 9%***
+
+7. ¿Alguna de las variables del data set, tiene una relación de doble efecto (no lineal)?. Si la respuesta es sí,        explique y genere un **modelo 3**, donde considere como base al modelo 2 e incorporé esta variable.Si la respuesta    es no, genere una variable que tenga este efecto. En ambos casos interprete la variable, argumente su incorporación    y determine si es significativa. 
+
+```{r}
+db2$desempleo2 <-db2$desempleo*db2$desempleo
+modelo3 <- lm(educacion ~ distancia+desempleo+desempleo2+factor(educPadre), data = db2, na.action = na.omit)
+summary(modelo3)
+```
+
+#RESPUESTA
+
+***Para este nuevo modelo se creo la variable salario2 que como podemos ver pasado el punto de inflexion hara disminuir en un -0.002089 el logro educacional, mientras que bajo el punto hara aumentar en 0.053682 el logro educacional. En cuanto al R2 su aumento es insignificante 0.0904 a 0.09116***
+8. Genere un **modelo 4** a su gusto, sin perder el objetivo del estudio. Interprete las variables que no hayan sido     analizadas y determine que tan bueno es este modelo.
+
+***En este apartado realizare dos modelos el modelo4 y el modelo4b, el primero me parmitira analizar todas las variables y con esto poder determinar cuales elegir para mi modelo4 final***
+
+#modelo4
+```{r}
+modelo4<- lm(educacion ~ ., data = db2, na.action = na.omit)
+summary(modelo4)
+```
+
+#modelo4b
+```{r}
+modelo4b<- lm(educacion ~ distancia+prueba_conocimiento+factor(ingresos)+factor(casaPropia)+factor(raza)+factor(hispano)+factor(educPadre)+factor(educMadre), data = db2, na.action = na.omit)
+summary(modelo4b)
+```
+#Respuesta
+
+***En el modelo que escogi se utilizan en su mayoria la totalidad de datos, 
+sin perder el objetivo que nuestra variable dependiente sea educacion, las variables sin explicar anteriormente corresponden a las de tipo factor cuyo valor cuando es 1 aumenta de acuerdo al coeficiente de la tabla. si bien se logro el mayor porcentaje de R2 aun asi es bajo alcanzando el 28.55% muy por debajo del 65% aceptado.***
+
+9. De los 4 modelos señalados, escoga el mejor y determine si es bueno para predecir. Genere una predicción utilizando    `predict(modelo,data)`.
+
+```{r}
+nuevo<-data.frame(distancia=c(0.4,5.1,7.8),prueba_conocimiento=c(63.20,22,10),ingresos=c(0),casaPropia=c(0),raza=c(0),hispano=c(0),educPadre=c(0),educMadre=c(0))
+predict(modelo4b,nuevo)
+```
+
+#RESPUESTA
+
+**Para el desarrollo de esta pregunta se utilizo el modelo que presentaba mayor porcentaje en comparacion con los demas, sin embargo y como se menciono anteriormente este porcentaje no cumple con el minimo aceptado de 65% por lo tanto no es bueno para predecir. Aca en el ejemplo podemos ver como vario el resultado cuando ingresamos valores de distancia mayor, un puntaje bajo y alto y finalmente como disminuyo en los casos que los factores mas influyentes llevaron el valor cero**
+
+
+
+

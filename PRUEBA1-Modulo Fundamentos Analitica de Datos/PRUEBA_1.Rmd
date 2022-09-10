@@ -1,0 +1,113 @@
+---
+title: "PRUEBA 1"
+author: "Camila Carrasco Latin"
+date: "15 de abril"
+---
+# Librerías
+
+```{r}
+library(tidyselect)
+library(rlang)
+library(dplyr)
+```
+
+#Cargando el dataset
+
+Primero cargaremos el dataset,el cual contiene informacion de las viviendas en Chile
+
+```{r}
+Viviendas <- read.csv("~/Viviendas.csv")
+View(Viviendas)
+```
+
+1)¿Cuales son las dimensiones del dataset?
+Se presentan la cantidad de datos en filas [192030] y columnas [14]
+
+```{r}
+dim(Viviendas)
+```
+
+2)¿Qué describe cada línea que corresponde a sus dos últimos digitos de su RUT? (la K y el cero se reemplazan por 1.
+
+```{r}
+head(Viviendas)
+```
+
+3)¿Cuántas columnas tipo factor existen?
+
+R.-Las columnas tipo factor son 2 y corresponden a nombre_comuna y id_base
+
+
+
+```{r}
+str(Viviendas)
+```
+
+4)¿Existen valores NA? ´¿Cuantos?
+
+R.- no existen valores na
+
+```{r}
+sum(is.na(Viviendas))
+```
+
+5)Muestre las 10 comunas con mayor avaluo promedio
+
+```{r}
+prom<-aggregate(avaluo~nombre_comuna, data = Viviendas, mean)
+prom_orden<-prom[order(prom$avaluo, decreasing = TRUE),]
+prom_orden[1:10,]
+```
+
+6)Obtenga la media, mediana, percentil 25 y 75 para dos comunas a su elección con respecto a la variable terreno. Compare los resultados y comente que se puede decir al respecto de estas comunas.
+
+R.- Las comunas seleccionadas son coquimbo y las condes
+Las condes:
+media: 111.0694
+Mediana: 0 
+Percentil 25 y 75: 0 y 0
+
+Coquimbo: 
+media: 311.7898
+Mediana: 151
+Percentil 25 y 75:  76 200 
+Al observar nuestros resultados se desprende que existe una considerable diferencia entre el tamaño de los terrenos de una comuna ubicada en la region metropolitana y una comuna ubicada en el norte del pais. Esto podria deberse a la diferencia de superficie de ambas comunas, superando coquimbo con creces y la cantidad de hab/km2 en la cual las condes supera a coquimbo, esto limita considerablemente el tamaño de los terrenos para lograr ubicar a la poblacion
+
+```{r}
+comuna1<-Viviendas[Viviendas$nombre_comuna=="LAS CONDES",]
+mean(comuna1$terreno)
+median(comuna1$terreno)
+quantile(comuna1$terreno, probs=c(0.25, 0.75))
+
+
+comuna2<-Viviendas[Viviendas$nombre_comuna=="COQUIMBO",]
+mean(comuna2$terreno)
+median(comuna2$terreno)
+quantile(comuna2$terreno, probs=c(0.25, 0.75))
+```
+
+7)Genere un dataframe que muestre la cantidad de observaciones, promedio terreno y promedio construcción por comuna y año.
+
+```{r}
+prom_terr<-as.data.frame(table(Viviendas$terreno,Viviendas$construccion))
+
+```
+
+8) 
+
+```{r}
+
+```
+
+9)Realice un gráfico que muestre la relación entre avaluo y construcción. ¿Es posible ver valor atípicos (outliers)?
+
+```{r, fig.width = 3}
+ ggplot(Viviendas,aes(x=construccion, y = avaluo, color = construccion))+
+ geom_point()+
+  scale_x_continuous(name = "construccion (M2)")+
+  scale_y_continuous(name = "avaluo")
+```
+
+
+
+

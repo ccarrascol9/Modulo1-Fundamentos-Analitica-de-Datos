@@ -1,0 +1,225 @@
+---
+title: "EXAMEN"
+author: "Camila Carrasco"
+date: "29 de abril 2022"
+output: 
+  html_document: 
+    theme: paper
+    toc: yes
+---
+# DETALLES DEL DATASET
+
+
+# Librería necesaria
+
+```{r}
+#install.packages("readxl")
+library("ggpubr")
+library("ggplot2")
+library("corrplot")
+library("dplyr")
+
+```
+
+## Se cargan los datos
+
+```{r}
+salud <- read.csv("C:/Users/56936/Downloads/salud.csv")
+```
+## Realizamos una revision de nuestro dataset
+```{r}
+str(salud)
+```
+
+
+##Cambio de nombre de variables
+```{r}
+salud <- rename(salud,ENF_CORAZ="HeartDisease", IMC="BMI",FUMA="Smoking",ALCOHOL="AlcoholDrinking",ACCI_CEREBRO="Stroke",DEFICIT_SALUDFISICA="PhysicalHealth",DEFICIT_SALUDMENTAL="MentalHealth",DIFFCAMINAR="DiffWalking",SEXO="Sex",EDAD_CAT="AgeCategory",RAZA="Race",DIABETICO="Diabetic",ACT_FISICA="PhysicalActivity",SALUD_GEN="GenHealth",TIEMPO_SUE="SleepTime",ASMA="Asthma",NEFROPATIA="KidneyDisease",CANCER_PIEL="SkinCancer",)
+```
+
+***Mostraremos la caracteristicas de la base de datos***
+
+```{r}
+salud$ENF_CORAZ <- as.factor(salud$ENF_CORAZ)
+salud$FUMA <- as.factor(salud$FUMA)
+salud$ALCOHOL <- as.factor(salud$ALCOHOL)
+salud$ACCI_CEREBRO <- as.factor(salud$ACCI_CEREBRO)
+salud$DIFFCAMINAR <- as.factor(salud$DIFFCAMINAR)
+salud$SEXO <- as.factor(salud$SEXO)
+salud$RAZA <- as.factor(salud$RAZA)
+salud$DIABETICO <- as.factor(salud$DIABETICO)
+salud$ACT_FISICA <- as.factor(salud$ACT_FISICA)
+salud$ACT_FISICA <- as.factor(salud$ACT_FISICA)
+salud$SALUD_GEN <- as.factor(salud$SALUD_GEN)
+salud$ASMA <- as.factor(salud$ASMA)
+salud$NEFROPATIA<- as.factor(salud$NEFROPATIA)
+salud$CANCER_PIEL<- as.factor(salud$CANCER_PIEL)
+str(salud)
+
+```
+
+
+**Se verifica que las variables son numericas y la funcion summary indica que no existen na en la base de datos**
+
+```{r}
+summary(salud$DEFICIT_SALUDFISICA)
+summary(salud$TIEMPO_SUE)
+```
+
+
+***Confirmamos nuevamente que no existan na, nan e infinite en nuestras variables a utilizar***
+
+```{r}
+salud_na<-salud[is.na(salud$DEFICIT_SALUDFISICA)==TRUE,]
+salud_nan<-salud[is.nan(salud$DEFICIT_SALUDFISICA)==TRUE,]
+salud_infinite<-salud[is.infinite(salud$DEFICIT_SALUDFISICA)==TRUE,]
+
+salud_na2<-salud[is.na(salud$TIEMPO_SUE)==TRUE,]
+salud_nan2<-salud[is.nan(salud$TIEMPO_SUE)==TRUE,]
+salud_infinite2<-salud[is.infinite(salud$TIEMPO_SUE)==TRUE,]
+```
+
+***Se confirma que no hay datos na, ni datos nulos ***
+
+***Debido a que la funcion summary no entrega la moda, la calculamos con nuestra funcion para ambas variables***
+
+```{r}
+mode_tiemposueno <- function(x) {
+   return(as.numeric(names(which.max(table(salud$TIEMPO_SUE)))))
+}
+
+mode_deficitsaludfis<- function(x) {
+   return(as.numeric(names(which.max(table(salud$DEFICIT_SALUDFISICA)))))
+}
+
+mode_tiemposueno(salud$TIEMPO_SUE)
+mode_deficitsaludfis(salud$DEFICIT_SALUDFISICA)
+```
+#Veremos de manera grafica ahora nuestras variables de interes
+#HISTOGRAMA DEFICIT DE LA SALUD FISICA
+```{r}
+ggplot(salud,aes(x = DEFICIT_SALUDFISICA))+ 
+  geom_histogram()+
+  scale_x_discrete(name = "Cantidad de dias con deficit de salud fisica")+
+  scale_y_continuous(name="Cantidad de encuestados")
+```
+
+#HISTOGRAMA HORAS DE SUEÑO
+
+```{r}
+ggplot(salud,aes(x = TIEMPO_SUE))+ 
+  geom_histogram()+
+  scale_x_discrete(name = "Cantidad de horas que duerme")+
+  scale_y_continuous(name="Cantidad de encuestados")
+
+```
+
+***Realizaremos una estructuracion de los datos, ya que se considera que una persona no podria dormir las 24 horas por ende  permitiremos valores de hasta 20 horas, ni tampoco dormir menos de 4 horas***
+
+```{r}
+
+salud_new<-as.data.frame(salud[salud$TIEMPO_SUE<=20, ])
+db2<-as.data.frame(salud_new[salud_new$TIEMPO_SUE>=4, ])
+```
+
+#Planteamiento hipotesis nula
+
+H0: No existe un grado de correlación entre las horas que duerme una persona y la cantidad de días que tendrá una salud física deficiente.
+
+
+***Realizamos nuestra correlacion de pearson con las variables***
+```{r}
+cor.test(db2$DEFICIT_SALUDFISICA, db2$TIEMPO_SUE, method = "pearson", na.action = na.rm)
+```
+
+
+
+*** Graficar la dispersión de los datos y el respectivo estadístico de pearson***
+
+```{r}
+sp <- ggscatter(db2, x = "TIEMPO_SUE" , y = "DEFICIT_SALUDFISICA",
+                add = "reg.line",  
+                add.params = list(color = "pink", fill = "lightgray"), 
+                conf.int = FALSE # Add confidence interval
+)
+sp+stat_cor(method = "pearson")
+```
+
+***nuevos promedios y medianas***
+```{r}
+summary(salud_new$DEFICIT_SALUDFISICA)
+summary(salud_new$TIEMPO_SUE)
+```
+
+
+
+Las horas de sueño impactan la salud fisica, por lo que la variable dependiente es deficit salud fisica.
+
+
+#Regresion 1
+
+```{r}
+reg1<- lm(DEFICIT_SALUDFISICA ~ TIEMPO_SUE, data = db2, na.action = na.omit)
+summary(reg1)
+```
+
+***Veremos visualmente esta regresion***
+
+```{r}
+plot(db2$TIEMPO_SUE, db2$DEFICIT_SALUDFISICA, pch = 19, col = "lightblue")
+
+# Línea de regresión
+abline(lm(db2$DEFICIT_SALUDFISICA ~ db2$TIEMPO_SUE), col = "red", lwd = 3)
+
+# Correlación de Pearson
+text(paste("Correlación:", round(cor(db2$TIEMPO_SUE, db2$DEFICIT_SALUDFISICA), 2)), x = 25, y = 95)
+
+```
+
+#regresion 2
+
+```{r}
+reg2<- lm(DEFICIT_SALUDFISICA ~ TIEMPO_SUE+factor(DEFICIT_SALUDMENTAL), data = db2, na.action = na.omit)
+summary(reg2)
+```
+
+#regresion 3
+
+```{r}
+reg3<- lm(DEFICIT_SALUDFISICA ~ TIEMPO_SUE+factor(ENF_CORAZ)+factor(ACCI_CEREBRO)+factor(DIABETICO)+factor(ASMA)+factor(NEFROPATIA)+factor(CANCER_PIEL), data = db2, na.action = na.omit)
+summary(reg3)
+```
+
+
+
+# regresion 4
+```{r}
+reg4<- lm(DEFICIT_SALUDFISICA ~ TIEMPO_SUE+factor(DEFICIT_SALUDMENTAL)+factor(DIFFCAMINAR), data = db2, na.action = na.omit)
+summary(reg4)
+```
+#regresion 5 con la totalidad de los datos
+
+```{r}
+reg5<- lm(DEFICIT_SALUDFISICA ~ ., data =  db2, na.action = na.omit)
+summary(reg5)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
