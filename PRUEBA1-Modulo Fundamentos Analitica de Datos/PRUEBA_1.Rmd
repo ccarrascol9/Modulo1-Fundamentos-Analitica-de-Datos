@@ -1,6 +1,6 @@
 ---
 title: "PRUEBA 1"
-author: "Camila Carrasco Latin"
+author: "Camila Tamara Carrasco Latin"
 date: "15 de abril"
 ---
 # Librerías
